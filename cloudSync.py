@@ -38,7 +38,9 @@ class SyncBdy2Ali(object):
     def listBdyPath(self, path: str = '/') -> list:
         bdyStdout = StringIO()
         sys.stdout = bdyStdout
-        check = self.__bdyHandle.list(remotepath=path)
+        sep = '#&*&#'
+        fmt = '$t{}$f{}$s{}$m{}$d'.format(sep, sep, sep, sep)
+        check = self.__bdyHandle.list(remotepath=path, fmt=fmt)
         sys.stdout = self.__sysStdout
 
         if not int(check) == 0:
@@ -56,7 +58,7 @@ class SyncBdy2Ali(object):
         for item in lines:
             if len(item) <= 0:
                 continue
-            objs = item.split(' ')
+            objs = item.split(sep)
             attr = ObjectAttr(objs[0] != 'D', objs[1], objs[2], path)
             if not attr.isfile:
                 res.append(attr)
@@ -100,12 +102,12 @@ class SyncBdy2Ali(object):
                     print(aigpy.cmd.green("Exist:") + item.name)
                     continue
 
-                print('')
                 if not self.checkLocalExistFile(item, downloadPath):
                     print(aigpy.cmd.green("Info:") + "download " + item.name)
                     if not self.downloadBdyFile(item, downloadPath):
-                        print(aigpy.cmd.red("Err:") + 'dl failed. ' + item.name)
+                        print(aigpy.cmd.red("Err:") + 'dl failed. ')
                         continue
+                    print('')
 
                 localFilePath = '{}/{}/{}'.format(downloadPath, item.path, item.name)
                 remoteFilePath = '{}/{}'.format(aliPath, item.name)
