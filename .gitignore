@@ -1,2 +1,17 @@
 /__pycache__
 /aliyundrive-uploader
+/alipy.py
+/main.py
+/run.sh
+/sync.py
+/test.py
+/.idea
+/.vscode
+/b2a.egg-info
+/build
+/dist
+/venv
+/b2a/b2a
+/b2a/download
+/b2a/__pycache__
+/__init__.spec
