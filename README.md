@@ -17,3 +17,13 @@ pip3 install b2a --upgrade
 ## 💽 界面
 
 ![](https://raw.githubusercontent.com/yaronzz/BaiduYunToAliYun/main/image/1.png)
+
+## 🎄使用
+
+1. 登录阿里云，需要获取`refresh_token`
+
+![](https://raw.githubusercontent.com/yaronzz/BaiduYunToAliYun/main/image/2.png)
+
+2. 登录百度云，需要获取`cookies`
+
+![](https://raw.githubusercontent.com/yaronzz/BaiduYunToAliYun/main/image/3.png)
