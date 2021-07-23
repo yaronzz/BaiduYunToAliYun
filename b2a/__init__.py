@@ -8,8 +8,9 @@
 @Contact :  yaronhuang@foxmail.com
 @Desc    :
 """
+import getopt
 import os
-import time
+import sys
 
 import aigpy
 from prettytable import prettytable
@@ -30,7 +31,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.22.1'
+VERSION = '2021.7.23.1'
 
 __CONFIG_PATH__ = os.path.expanduser('~') + '/b2a/'
 __AUTH_PATH__ = f"{__CONFIG_PATH__}auth.json"
@@ -131,16 +132,69 @@ def printLogo():
     print(string)
 
 
+def printUsage():
+    print("=============B2A HELP==============")
+    tb = prettytable.PrettyTable()
+    tb.field_names = ["功能", "描述"]
+    tb.align = 'l'
+    tb.add_row(["-h or --help", "显示帮助"])
+    tb.add_row(["-v or --version", "显示版本"])
+    tb.add_row(["-a or --ali", "登录阿里云，参数为refresh_token"])
+    tb.add_row(["-b or --bdy", "登录百度云，参数为cookies"])
+    tb.add_row(["-f or --from", "待迁移的百度云目录"])
+    tb.add_row(["-t or --to", "要存放的阿里云目录"])
+    tb.add_row(["--alist", "显示阿里云目录"])
+    tb.add_row(["--blist", "显示百度云目录"])
+    print(tb)
+
+
+def mainCommand():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],
+                                   "hva:b:f:t:",
+                                   ["help", "version", "ali=", "bdy=", "from=", "to=", "alist=", "blist="])
+    except getopt.GetoptError as errmsg:
+        aigpy.cmd.printErr("输入参数错误!")
+        printUsage()
+        return
+
+    bdyPath = ''
+    aliPath = ''
+    for opt, val in opts:
+        if opt in ('-h', '--help'):
+            printUsage()
+            return
+        if opt in ('-v', '--version'):
+            printLogo()
+            return
+        if opt in ('-a', '--ali'):
+            loginAli(val)
+            continue
+        if opt in ('-b', '--bdy'):
+            loginBdy(val)
+            continue
+        if opt in ('-f', '--from'):
+            bdyPath = val
+            continue
+        if opt in ('-t', '--to'):
+            aliPath = val
+            continue
+        if opt in ('--alist'):
+            listPath(aplat, val)
+            continue
+        if opt in ('--blist'):
+            listPath(bdyplat, val)
+            continue
+
+    if aliPath == '' or bdyPath == '':
+        return
+
+    aigpy.cmd.printInfo(f"====迁移百度云[{bdyPath}]到阿里云[{aliPath}]====")
+    asyncPath(bdyPath, aliPath)
+
+
 def main():
     printLogo()
-
-    token = authJson.get('ali-refresh_token')
-    cookies = authJson.get('bdy-cookies')
-    if token:
-        loginAli(token)
-    if cookies:
-        loginBdy(cookies)
-
     while True:
         printChoices()
         choice = aigpy.cmd.inputInt(aigpy.cmd.yellow("选项:"), 0)
@@ -165,4 +219,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    print()
+    token = authJson.get('ali-refresh_token')
+    cookies = authJson.get('bdy-cookies')
+    if token:
+        loginAli(token)
+    if cookies:
+        loginBdy(cookies)
+
+    if len(sys.argv) > 1:
+        mainCommand()
+    else:
+        main()

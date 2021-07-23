@@ -8,10 +8,9 @@
 @Contact :  yaronhuang@foxmail.com
 @Desc    :
 """
-from tqdm import *
 import aigpy
-from aigpy.convertHelper import convertMemoryUnitAuto, convertMemoryUnit, MemoryUnit
 from baidupcs_py.baidupcs import BaiduPCSApi
+from tqdm import *
 
 from b2a.platformImp import *
 
