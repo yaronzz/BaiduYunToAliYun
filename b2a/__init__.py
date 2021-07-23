@@ -31,7 +31,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.23.1'
+VERSION = '2021.7.23.2'
 
 __CONFIG_PATH__ = os.path.expanduser('~') + '/b2a/'
 __AUTH_PATH__ = f"{__CONFIG_PATH__}auth.json"
@@ -194,6 +194,17 @@ def mainCommand():
 
 
 def main():
+    token = authJson.get('ali-refresh_token')
+    cookies = authJson.get('bdy-cookies')
+    if token:
+        loginAli(token)
+    if cookies:
+        loginBdy(cookies)
+
+    if len(sys.argv) > 1:
+        mainCommand()
+        return
+
     printLogo()
     while True:
         printChoices()
@@ -219,15 +230,4 @@ def main():
 
 
 if __name__ == "__main__":
-    print()
-    token = authJson.get('ali-refresh_token')
-    cookies = authJson.get('bdy-cookies')
-    if token:
-        loginAli(token)
-    if cookies:
-        loginBdy(cookies)
-
-    if len(sys.argv) > 1:
-        mainCommand()
-    else:
-        main()
+    main()
