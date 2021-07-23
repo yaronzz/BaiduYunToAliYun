@@ -12,12 +12,21 @@ import getopt
 import os
 import sys
 
+import json
 import aigpy
 from prettytable import prettytable
 
 from b2a.aliplat import AliPlat, AliKey
 from b2a.bdyplat import BdyPlat, BdyKey
 from b2a.platformImp import PlatformImp
+
+
+class AsyncCount(object):
+    index = 0
+    err = 0
+    success = 0
+    skip = 0
+
 
 __LOGO__ = '''
          /$$$$$$$   /$$$$$$   /$$$$$$         
@@ -31,7 +40,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.23.2'
+VERSION = '2021.7.23.4'
 
 __CONFIG_PATH__ = os.path.expanduser('~') + '/b2a/'
 __AUTH_PATH__ = f"{__CONFIG_PATH__}auth.json"
@@ -39,6 +48,7 @@ __DOWNLOAD_PATH__ = './b2a/download/'
 
 aplat = AliPlat()
 bdyplat = BdyPlat()
+asyncCount = AsyncCount()
 
 aigpy.path.mkdirs(__CONFIG_PATH__)
 aigpy.path.mkdirs(__DOWNLOAD_PATH__)
@@ -53,7 +63,8 @@ def loginAli(token: str):
     aigpy.cmd.printInfo("登录阿里云成功!")
     aplat.setKey(key)
     authJson['ali-refresh_token'] = key.refreshToken
-    aigpy.file.writeJson(__AUTH_PATH__, authJson)
+    if not aigpy.file.write(__AUTH_PATH__, json.dumps(authJson), 'w+'):
+        aigpy.cmd.printErr("保存登录信息文件失败!")
 
 
 def loginBdy(cookies: str):
@@ -64,7 +75,8 @@ def loginBdy(cookies: str):
     aigpy.cmd.printInfo("登录百度云成功!")
     bdyplat.setKey(key)
     authJson['bdy-cookies'] = key.cookies
-    aigpy.file.writeJson(__AUTH_PATH__, authJson)
+    if not aigpy.file.write(__AUTH_PATH__, json.dumps(authJson), 'w+'):
+        aigpy.cmd.printErr("保存登录信息文件失败!")
 
 
 def listPath(plat: PlatformImp, remotePath: str):
@@ -74,41 +86,52 @@ def listPath(plat: PlatformImp, remotePath: str):
         print(item.path)
 
 
-def asyncPath(bdyFromPath: str, aliToPath: str):
-    array = bdyplat.list(bdyFromPath, True)
-    count = len(array)
-    countErr = 0
-    countSuccess = 0
-    countSkip = 0
-    for index, item in enumerate(array):
+def bdyToAli(bdyFromPath: str, aliToPath: str):
+    array = bdyplat.list(bdyFromPath)
+    for item in array:
         if not item.isfile:
             continue
 
-        aigpy.cmd.printInfo(f"[{index}/{count}] 迁移文件: {item.path}")
+        asyncCount.index += 1
+        aigpy.cmd.printInfo(f"[{asyncCount.index}] 迁移文件: {item.path}")
 
         localFilePath = __DOWNLOAD_PATH__ + item.path
         uploadFilePath = aliToPath + '/' + item.path.lstrip(bdyFromPath)
         if aplat.isFileExist(uploadFilePath):
-            countSkip += 1
+            asyncCount.skip += 1
             continue
 
         if aigpy.file.getSize(localFilePath) <= 0:
             check = bdyplat.downloadFile(item.path, localFilePath)
             if not check:
                 aigpy.cmd.printErr("[错误] 下载失败!")
-                countErr += 1
+                asyncCount.err += 1
                 continue
 
         check = aplat.uploadFile(localFilePath, uploadFilePath)
         if not check:
             aigpy.cmd.printErr("[错误] 上传失败!")
-            countErr += 1
+            asyncCount.err += 1
         else:
-            countSuccess += 1
+            asyncCount.success += 1
 
         aigpy.path.remove(localFilePath)
 
-    aigpy.cmd.printInfo(f"迁移文件：{countSuccess}；失败：{countErr}；跳过：{countSkip}")
+    for item in array:
+        if item.isfile:
+            continue
+        bdyToAli(item.path, aliToPath + '/' + item.name)
+
+
+def asyncPath(bdyFromPath: str, aliToPath: str):
+    asyncCount.err = 0
+    asyncCount.skip = 0
+    asyncCount.success = 0
+    asyncCount.index = 0
+
+    bdyToAli(bdyFromPath, aliToPath)
+
+    aigpy.cmd.printInfo(f"迁移文件：{asyncCount.success}；失败：{asyncCount.err}；跳过：{asyncCount.skip}")
 
 
 def printChoices():
