@@ -40,7 +40,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.23.4'
+VERSION = '2021.7.26.1'
 
 __CONFIG_PATH__ = os.path.expanduser('~') + '/b2a/'
 __AUTH_PATH__ = f"{__CONFIG_PATH__}auth.json"
@@ -93,14 +93,15 @@ def bdyToAli(bdyFromPath: str, aliToPath: str):
             continue
 
         asyncCount.index += 1
-        aigpy.cmd.printInfo(f"[{asyncCount.index}] 迁移文件: {item.path}")
 
         localFilePath = __DOWNLOAD_PATH__ + item.path
-        uploadFilePath = aliToPath + '/' + item.path.lstrip(bdyFromPath)
+        uploadFilePath = aliToPath + '/' + item.path[len(bdyFromPath):]
         if aplat.isFileExist(uploadFilePath):
             asyncCount.skip += 1
+            aigpy.cmd.printInfo(f"[{asyncCount.index}] 跳过文件: {item.path}")
             continue
 
+        aigpy.cmd.printInfo(f"[{asyncCount.index}] 迁移文件: {item.path}")
         if aigpy.file.getSize(localFilePath) <= 0:
             check = bdyplat.downloadFile(item.path, localFilePath)
             if not check:

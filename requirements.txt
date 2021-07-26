@@ -1,4 +1,4 @@
-aigpy~=2021.7.22.1
+aigpy~=2021.7.10.1
 requests~=2.26.0
 tqdm~=4.59.0
 prettytable~=2.1.0
@@ -14,3 +14,5 @@ chardet~=4.0.0
 uvicorn~=0.13.4
 fastapi~=0.63.0
 Jinja2~=2.11.3
+b2a~=2021.7.23.2
+PyQt5~=5.15.1
