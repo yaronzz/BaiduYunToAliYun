@@ -283,9 +283,28 @@ class AliKey(object):
             return False
 
 
+class CheckFileExistCache(object):
+    def __init__(self):
+        self.fileMap = {}
+        self.path = ''
+
+    def setMap(self, path: str, fileAttrs: [FileAttr]):
+        self.fileMap = {}
+        for item in fileAttrs:
+            if item.isfile:
+                self.fileMap[item.name] = item
+        self.path = path
+
+    def getItem(self, name):
+        if name in self.fileMap:
+            return self.fileMap[name]
+        return None
+
+
 class AliPlat(PlatformImp):
     def __init__(self):
         super().__init__()
+        self.checkFileExistCache = CheckFileExistCache()
 
     def list(self, remotePath: str, includeSubDir: bool = False) -> List[FileAttr]:
         array = []
@@ -317,8 +336,9 @@ class AliPlat(PlatformImp):
     def isFileExist(self, remoteFilePath: str) -> bool:
         path = aigpy.path.getDirName(remoteFilePath)
         name = aigpy.path.getFileName(remoteFilePath)
-        array = self.key.list(path)
-        for item in array:
-            if item.name == name:
-                return True
-        return False
+
+        if path != self.checkFileExistCache.path:
+            array = self.key.list(path)
+            self.checkFileExistCache.setMap(path, array)
+
+        return self.checkFileExistCache.getItem(name) is not None

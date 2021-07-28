@@ -41,6 +41,8 @@ class BdyPlat(PlatformImp):
 
     def list(self, remotePath: str, includeSubDir: bool = False) -> List[FileAttr]:
         array = []
+        if len(remotePath) <= 0:
+            remotePath = '/'
         res = self.key.api.list(remotePath)
         for item in res:
             obj = FileAttr()
@@ -99,3 +101,5 @@ class BdyPlat(PlatformImp):
 
     def isFileExist(self, remoteFilePath: str) -> bool:
         return self.key.api.is_file(remoteFilePath)
+
+

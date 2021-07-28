@@ -9,24 +9,16 @@
 @Desc    :
 """
 import getopt
-import os
 import sys
 
-import json
 import aigpy
 from prettytable import prettytable
 
 from b2a.aliplat import AliPlat, AliKey
 from b2a.bdyplat import BdyPlat, BdyKey
+from b2a.config import B2aConfig
 from b2a.platformImp import PlatformImp
-
-
-class AsyncCount(object):
-    index = 0
-    err = 0
-    success = 0
-    skip = 0
-
+from b2a.trans import Trans
 
 __LOGO__ = '''
          /$$$$$$$   /$$$$$$   /$$$$$$         
@@ -40,43 +32,38 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.26.1'
+VERSION = '2021.7.28.2'
 
-__CONFIG_PATH__ = os.path.expanduser('~') + '/b2a/'
-__AUTH_PATH__ = f"{__CONFIG_PATH__}auth.json"
-__DOWNLOAD_PATH__ = './b2a/download/'
-
-aplat = AliPlat()
+aliplat = AliPlat()
 bdyplat = BdyPlat()
-asyncCount = AsyncCount()
-
-aigpy.path.mkdirs(__CONFIG_PATH__)
-aigpy.path.mkdirs(__DOWNLOAD_PATH__)
-authJson = aigpy.file.getJson(__AUTH_PATH__)
+config = B2aConfig()
+trans = Trans(aliplat, bdyplat)
 
 
-def loginAli(token: str):
+def loginAli(token: str) -> bool:
     key = AliKey()
     if not key.login(token):
         aigpy.cmd.printErr("登录阿里云失败!")
-        return
+        return False
     aigpy.cmd.printInfo("登录阿里云成功!")
-    aplat.setKey(key)
-    authJson['ali-refresh_token'] = key.refreshToken
-    if not aigpy.file.write(__AUTH_PATH__, json.dumps(authJson), 'w+'):
+    aliplat.setKey(key)
+    config.aliKey = key.refreshToken
+    if not config.save():
         aigpy.cmd.printErr("保存登录信息文件失败!")
+    return True
 
 
-def loginBdy(cookies: str):
+def loginBdy(cookies: str) -> bool:
     key = BdyKey()
     if not key.login(cookies):
         aigpy.cmd.printErr("登录百度云失败!")
-        return
+        return False
     aigpy.cmd.printInfo("登录百度云成功!")
     bdyplat.setKey(key)
-    authJson['bdy-cookies'] = key.cookies
-    if not aigpy.file.write(__AUTH_PATH__, json.dumps(authJson), 'w+'):
+    config.bdyKey = key.cookies
+    if not config.save():
         aigpy.cmd.printErr("保存登录信息文件失败!")
+    return True
 
 
 def listPath(plat: PlatformImp, remotePath: str):
@@ -86,53 +73,10 @@ def listPath(plat: PlatformImp, remotePath: str):
         print(item.path)
 
 
-def bdyToAli(bdyFromPath: str, aliToPath: str):
-    array = bdyplat.list(bdyFromPath)
-    for item in array:
-        if not item.isfile:
-            continue
-
-        asyncCount.index += 1
-
-        localFilePath = __DOWNLOAD_PATH__ + item.path
-        uploadFilePath = aliToPath + '/' + item.path[len(bdyFromPath):]
-        if aplat.isFileExist(uploadFilePath):
-            asyncCount.skip += 1
-            aigpy.cmd.printInfo(f"[{asyncCount.index}] 跳过文件: {item.path}")
-            continue
-
-        aigpy.cmd.printInfo(f"[{asyncCount.index}] 迁移文件: {item.path}")
-        if aigpy.file.getSize(localFilePath) <= 0:
-            check = bdyplat.downloadFile(item.path, localFilePath)
-            if not check:
-                aigpy.cmd.printErr("[错误] 下载失败!")
-                asyncCount.err += 1
-                continue
-
-        check = aplat.uploadFile(localFilePath, uploadFilePath)
-        if not check:
-            aigpy.cmd.printErr("[错误] 上传失败!")
-            asyncCount.err += 1
-        else:
-            asyncCount.success += 1
-
-        aigpy.path.remove(localFilePath)
-
-    for item in array:
-        if item.isfile:
-            continue
-        bdyToAli(item.path, aliToPath + '/' + item.name)
-
-
 def asyncPath(bdyFromPath: str, aliToPath: str):
-    asyncCount.err = 0
-    asyncCount.skip = 0
-    asyncCount.success = 0
-    asyncCount.index = 0
-
-    bdyToAli(bdyFromPath, aliToPath)
-
-    aigpy.cmd.printInfo(f"迁移文件：{asyncCount.success}；失败：{asyncCount.err}；跳过：{asyncCount.skip}")
+    trans.clearCnt()
+    trans.setPath(bdyFromPath, aliToPath)
+    trans.start()
 
 
 def printChoices():
@@ -154,6 +98,12 @@ def printChoices():
 def printLogo():
     string = __LOGO__ + '\n               v' + VERSION
     print(string)
+
+
+def printNewVersion():
+    version = aigpy.pipHelper.getLastVersion('b2a')
+    if aigpy.system.cmpVersion(version, VERSION) > 0:
+        aigpy.cmd.printInfo("发现新版本：" + version)
 
 
 def printUsage():
@@ -199,12 +149,14 @@ def mainCommand():
             continue
         if opt in ('-f', '--from'):
             bdyPath = val
+            if aliPath == '':
+                aliPath = val
             continue
         if opt in ('-t', '--to'):
             aliPath = val
             continue
         if opt in ('--alist'):
-            listPath(aplat, val)
+            listPath(aliplat, val)
             continue
         if opt in ('--blist'):
             listPath(bdyplat, val)
@@ -218,18 +170,17 @@ def mainCommand():
 
 
 def main():
-    token = authJson.get('ali-refresh_token')
-    cookies = authJson.get('bdy-cookies')
-    if token:
-        loginAli(token)
-    if cookies:
-        loginBdy(cookies)
+    if config.aliKey:
+        loginAli(config.aliKey)
+    if config.bdyKey:
+        loginBdy(config.bdyKey)
 
     if len(sys.argv) > 1:
         mainCommand()
         return
 
     printLogo()
+    printNewVersion()
     while True:
         printChoices()
         choice = aigpy.cmd.inputInt(aigpy.cmd.yellow("选项:"), 0)
@@ -243,7 +194,7 @@ def main():
             loginBdy(para)
         elif choice == 3:
             para = input(aigpy.cmd.yellow("请输入路径:"))
-            listPath(aplat, para)
+            listPath(aliplat, para)
         elif choice == 4:
             para = input(aigpy.cmd.yellow("请输入路径:"))
             listPath(bdyplat, para)
