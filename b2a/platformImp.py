@@ -40,7 +40,7 @@ class PlatformImp(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def downloadFile(self, remoteFilePath: str, localFilePath: str) -> bool:
+    def downloadFile(self, fileAttr: FileAttr, localFilePath: str) -> bool:
         pass
 
     @abc.abstractmethod

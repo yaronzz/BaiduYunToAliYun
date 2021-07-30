@@ -316,7 +316,7 @@ class AliPlat(PlatformImp):
                 array.extend(subarr)
         return array
 
-    def downloadFile(self, remoteFilePath: str, localFilePath: str) -> bool:
+    def downloadFile(self, fileAttr: FileAttr, localFilePath: str) -> bool:
         return False
 
     def uploadFile(self, localFilePath: str, remoteFilePath: str) -> bool:

@@ -10,8 +10,10 @@
 """
 import aigpy
 from baidupcs_py.baidupcs import BaiduPCSApi
+from requests import head
 from tqdm import *
 
+from b2a.downloader import Downloader
 from b2a.platformImp import *
 
 
@@ -58,36 +60,44 @@ class BdyPlat(PlatformImp):
                 array.extend(subarr)
         return array
 
-    def downloadFile(self, remoteFilePath: str, localFilePath: str) -> bool:
+    def downloadFile(self, fileAttr: FileAttr, localFilePath: str) -> bool:
         path = aigpy.path.getDirName(localFilePath)
         name = aigpy.path.getFileName(localFilePath)
         check = aigpy.path.mkdirs(path)
 
-        stream = self.key.api.file_stream(remoteFilePath)
-        if not stream:
+        # stream = self.key.api.file_stream(fileAttr.path)
+        # if not stream:
+        #     return False
+        #
+        # curSize = 0
+        # totalSize = len(stream)
+        # with open(localFilePath, 'wb+') as f:
+        #     with tqdm.wrapattr(stream, "read", desc='下载中', miniters=1, total=totalSize, ascii=True) as fs:
+        #         while True:
+        #             data = fs.read(2097152)
+        #             f.write(data)
+        #             curSize += len(data)
+        #             if curSize >= totalSize:
+        #                 break
+        #
+        # stream.close()
+        # return True
+
+        headers = {
+            "Cookie ": "; ".join(
+                [f"{k}={v if v is not None else ''}" for k, v in self.key.api.cookies.items()]
+            ),
+            "User-Agent": "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android",
+            "Connection": "Keep-Alive",
+        }
+
+        link = self.key.api.download_link(fileAttr.path)
+        if not link or len(link) <= 0:
             return False
 
-        aigpy.path.mkdirs(path)
-
-        curSize = 0
-        totalSize = len(stream)
-        with open(localFilePath, 'wb+') as f:
-            with tqdm.wrapattr(stream, "read", desc='下载中:', miniters=1, total=totalSize, ascii=True) as fs:
-                while True:
-                    data = fs.read(10485760)
-                    f.write(data)
-                    curSize += len(data)
-                    if curSize >= totalSize:
-                        break
-
-        stream.close()
-        return True
-
-        # link = self.key.api.download_link(remoteFilePath) 
-        # if not link or len(link) <= 0:
-        #     return False
-        # check, message = aigpy.net.downloadFile(link, localFilePath, showProgress=True)
-        # return check
+        dl = Downloader(link, headers, localFilePath, fileAttr.size)
+        check = dl.run()
+        return check
 
     def uploadFile(self, localFilePath: str, remoteFilePath: str) -> bool:
         return False

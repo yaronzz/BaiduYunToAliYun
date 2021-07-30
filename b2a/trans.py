@@ -8,6 +8,8 @@
 @Contact :  yaronhuang@foxmail.com
 @Desc    :
 """
+import os
+
 import aigpy
 
 from b2a import AliPlat, BdyPlat
@@ -46,11 +48,15 @@ class Trans(object):
         aigpy.cmd.printInfo(f"[{self.index}] 迁移文件: {item.path}")
         localFilePath = _DOWNLOAD_PATH + item.path
         if aigpy.file.getSize(localFilePath) <= 0:
-            check = self._bdyplat.downloadFile(item.path, localFilePath)
+            tmpFile = localFilePath + ".tmp"
+            check = self._bdyplat.downloadFile(item, tmpFile)
             if not check:
+                aigpy.path.remove(tmpFile)
                 aigpy.cmd.printErr("[错误] 下载失败!")
                 self.errCnt += 1
                 return False
+            else:
+                os.rename(tmpFile, localFilePath)
 
         check = self._aliplat.uploadFile(localFilePath, uploadFilePath)
         if not check:
@@ -77,4 +83,5 @@ class Trans(object):
     def start(self):
         self.clearCnt()
         self.__movePath__(self.baseFromPath)
+        aigpy.path.remove(_DOWNLOAD_PATH)
         aigpy.cmd.printInfo(f"迁移文件：{self.successCnt}；失败：{self.errCnt}；跳过：{self.skipCnt}")
