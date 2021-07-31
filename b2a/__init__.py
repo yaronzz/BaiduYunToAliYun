@@ -32,7 +32,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.30.5'
+VERSION = '2021.7.31.2'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()
@@ -186,6 +186,11 @@ def mainCommand():
     asyncPath(bdyPath, aliPath)
 
 
+def enter(desc):
+    aigpy.cmd.printW(aigpy.cmd.yellow(desc), False)
+    return input()
+
+
 def main():
     if len(sys.argv) > 1:
         mainCommand()
@@ -201,26 +206,26 @@ def main():
 
     while True:
         printChoices()
-        choice = aigpy.cmd.inputInt(aigpy.cmd.yellow("选项:"), 0)
-        if choice == 0:
+        choice = enter("选项:")
+        if choice == '0':
             return
-        elif choice == 1:
-            para = input(aigpy.cmd.yellow("请输入refresh_token:"))
+        elif choice == '1':
+            para = enter("请输入refresh_token:")
             if loginAli(para):
                 aigpy.cmd.printInfo("登录阿里云成功!")
-        elif choice == 2:
-            para = input(aigpy.cmd.yellow("请输入cookies:"))
+        elif choice == '2':
+            para = enter("请输入cookies:")
             if loginBdy(para):
                 aigpy.cmd.printInfo("登录百度云成功!")
-        elif choice == 3:
-            para = input(aigpy.cmd.yellow("请输入路径:"))
+        elif choice == '3':
+            para = enter("请输入路径:")
             listPath(aliplat, para)
-        elif choice == 4:
-            para = input(aigpy.cmd.yellow("请输入路径:"))
+        elif choice == '4':
+            para = enter("请输入路径:")
             listPath(bdyplat, para)
-        elif choice == 5:
-            fromPath = input(aigpy.cmd.yellow("请输入百度云路径:"))
-            toPath = input(aigpy.cmd.yellow("请输入阿里云路径:"))
+        elif choice == '5':
+            fromPath = enter("请输入百度云路径:")
+            toPath = enter("请输入阿里云路径:")
             asyncPath(fromPath, toPath)
 
 
