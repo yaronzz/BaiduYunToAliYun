@@ -45,7 +45,16 @@ class BdyPlat(PlatformImp):
         array = []
         if len(remotePath) <= 0:
             remotePath = '/'
-        res = self.key.api.list(remotePath)
+
+        retry = 3
+        res = []
+        while retry > 0:
+            try:
+                res = self.key.api.list(remotePath)
+                break
+            except:
+                retry -= 1
+
         for item in res:
             obj = FileAttr()
             obj.isfile = item.is_file

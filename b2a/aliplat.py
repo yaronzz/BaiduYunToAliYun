@@ -87,14 +87,14 @@ class AliKey(object):
     def __updatePathId__(self, path: str, sid: str):
         self.pathIds[path] = sid
 
-    def list(self, remotePath: str) -> List[FileAttr]:
+    def list(self, remotePath: str, nextMarker: str = None) -> List[FileAttr]:
         remotePath = remotePath.rstrip('/')
         sid = self.__getPathId__(remotePath)
         if not sid:
             return []
 
         try:
-            requests_data = {"drive_id": self.driveId, "parent_file_id": sid}
+            requests_data = {"drive_id": self.driveId, "parent_file_id": sid, 'marker': nextMarker, 'limit': 100}
             requests_post = requests.post('https://api.aliyundrive.com/v2/file/list',
                                           data=json.dumps(requests_data),
                                           headers=self.headers,
@@ -111,8 +111,12 @@ class AliKey(object):
                     self.__updatePathId__(obj.path, obj.uid)
 
                 ret.append(obj)
-            return ret
 
+            next_marker = requests_post.get('next_marker')
+            if next_marker and nextMarker != requests_post['next_marker']:
+                ret.extend(self.list(remotePath, next_marker))
+
+            return ret
         except:
             return []
 
