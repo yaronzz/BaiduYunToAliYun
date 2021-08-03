@@ -117,7 +117,8 @@ class AliKey(object):
                 ret.extend(self.list(remotePath, next_marker))
 
             return ret
-        except:
+        except Exception as e:
+            aigpy.cmd.printErr("获取目录文件列表失败：" + str(e))
             return []
 
     def __mkdir__(self, folderName, parentFolderId='root') -> (bool, str):
@@ -135,7 +136,8 @@ class AliKey(object):
                                       headers=self.headers,
                                       verify=False).json()
             return True, post_json.get('file_id')
-        except:
+        except Exception as e:
+            aigpy.cmd.printErr("新建远程目录失败：" + str(e))
             return False, ''
 
     def __formatRemotePath__(self, remotePath: str) -> str:
@@ -199,6 +201,7 @@ class AliKey(object):
             ret = AliUploadLink(requests_post_json, localFilePath, remoteFilePath)
             return ret
         except Exception as e:
+            aigpy.cmd.printErr("获取上传链接失败：" + str(e))
             return None
 
     def __getXmlValue__(self, xml_string, tag_name):
@@ -284,6 +287,7 @@ class AliKey(object):
             if 'file_id' in requests_post_json:
                 return True
         except Exception as e:
+            aigpy.cmd.printErr("上传文件失败：" + str(e))
             return False
 
 

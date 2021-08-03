@@ -32,7 +32,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.7.31.3'
+VERSION = '2021.8.2.3'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()
@@ -173,9 +173,15 @@ def mainCommand():
             aliPath = val
             continue
         if opt in ('--alist'):
+            if not aliplat.hasKey():
+                aigpy.cmd.printErr('请先登录阿里云！')
+                return
             listPath(aliplat, val)
             continue
         if opt in ('--blist'):
+            if not bdyplat.hasKey():
+                aigpy.cmd.printErr('请先登录百度云！')
+                return
             listPath(bdyplat, val)
             continue
 
@@ -191,6 +197,10 @@ def enter(desc):
     return input()
 
 
+def test():
+    aliplat.uploadFile('G:\\test\\Data.zip', "/apps/test/Data.zip")
+
+
 def main():
     if len(sys.argv) > 1:
         mainCommand()
@@ -203,6 +213,8 @@ def main():
         aigpy.cmd.printInfo("登录阿里云成功!")
     if config.bdyKey and loginBdy(config.bdyKey):
         aigpy.cmd.printInfo("登录百度云成功!")
+
+    # test()
 
     while True:
         printChoices()

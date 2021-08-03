@@ -10,8 +10,7 @@
 """
 import aigpy
 from baidupcs_py.baidupcs import BaiduPCSApi
-from requests import head
-from tqdm import *
+from tqdm import tqdm
 
 from b2a.downloader import Downloader
 from b2a.platformImp import *
@@ -41,20 +40,29 @@ class BdyPlat(PlatformImp):
     def __init__(self):
         super().__init__()
 
+    def __safeAPI__(self, method, para):
+        retry = 3
+        while retry > 0:
+            try:
+                if method == 'list':
+                    return self.key.api.list(para)
+                elif method == 'download_link':
+                    return self.key.api.download_link(para)
+                elif method == 'is_file':
+                    return self.key.api.is_file(para)
+                elif method == 'file_stream':
+                    return self.key.api.file_stream(para)
+            except:
+                aigpy.cmd.printErr("重新尝试获取：BdyPlat " + method)
+                retry -= 1
+        return None
+
     def list(self, remotePath: str, includeSubDir: bool = False) -> List[FileAttr]:
         array = []
         if len(remotePath) <= 0:
             remotePath = '/'
 
-        retry = 3
-        res = []
-        while retry > 0:
-            try:
-                res = self.key.api.list(remotePath)
-                break
-            except:
-                retry -= 1
-
+        res = self.__safeAPI__('list', remotePath)
         for item in res:
             obj = FileAttr()
             obj.isfile = item.is_file
@@ -65,8 +73,8 @@ class BdyPlat(PlatformImp):
             array.append(obj)
 
             if includeSubDir and item.is_dir:
-                subarr = self.list(item.path, includeSubDir)
-                array.extend(subarr)
+                subList = self.list(item.path, includeSubDir)
+                array.extend(subList)
         return array
 
     def downloadFile(self, fileAttr: FileAttr, localFilePath: str) -> bool:
@@ -74,7 +82,7 @@ class BdyPlat(PlatformImp):
         name = aigpy.path.getFileName(localFilePath)
         check = aigpy.path.mkdirs(path)
 
-        # stream = self.key.api.file_stream(fileAttr.path)
+        stream = self.__safeAPI__('file_stream', fileAttr.path)
         # if not stream:
         #     return False
         #
@@ -83,7 +91,7 @@ class BdyPlat(PlatformImp):
         # with open(localFilePath, 'wb+') as f:
         #     with tqdm.wrapattr(stream, "read", desc='下载中', miniters=1, total=totalSize, ascii=True) as fs:
         #         while True:
-        #             data = fs.read(2097152)
+        #             data = fs.read(5120)
         #             f.write(data)
         #             curSize += len(data)
         #             if curSize >= totalSize:
@@ -100,11 +108,11 @@ class BdyPlat(PlatformImp):
             "Connection": "Keep-Alive",
         }
 
-        link = self.key.api.download_link(fileAttr.path)
+        link = self.__safeAPI__('download_link', fileAttr.path)
         if not link or len(link) <= 0:
             return False
 
-        dl = Downloader(link, headers, localFilePath, fileAttr.size)
+        dl = Downloader(link, headers, localFilePath, fileAttr.size, 1)
         check = dl.run()
         return check
 
@@ -112,13 +120,13 @@ class BdyPlat(PlatformImp):
         return False
 
     def downloadLink(self, remoteFilePath: str):
-        link = self.key.api.download_link(remoteFilePath)
+        link = self.__safeAPI__('download_link', remoteFilePath)
         return link
 
     def uploadLink(self, localFilePath: str, remoteFilePath: str):
         return None
 
     def isFileExist(self, remoteFilePath: str) -> bool:
-        return self.key.api.is_file(remoteFilePath)
+        return self.__safeAPI__('is_file', remoteFilePath)
 
 

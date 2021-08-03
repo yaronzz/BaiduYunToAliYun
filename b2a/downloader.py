@@ -13,6 +13,7 @@ from threading import Lock
 from urllib.request import Request, urlopen
 
 import aigpy.cmdHelper
+import requests
 from tqdm import tqdm
 
 
@@ -46,7 +47,7 @@ class Downloader(object):
             r = urlopen(req)
 
             while not self._error:
-                data = r.read(1024*5)
+                data = r.read(1024 * 5)
                 tmpSize = len(data)
                 if tmpSize <= 0:
                     break
