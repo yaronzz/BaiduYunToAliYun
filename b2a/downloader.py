@@ -9,11 +9,9 @@
 @Desc    :
 """
 from concurrent.futures import ThreadPoolExecutor, wait
-from threading import Lock
-from urllib.request import Request, urlopen
 
 import aigpy.cmdHelper
-import requests
+from baidupcs_py.common.io import RangeRequestIO
 from tqdm import tqdm
 
 
@@ -24,10 +22,21 @@ class Downloader(object):
         self.filePath = filePath
         self.size = size
 
+        self._pool = ThreadPoolExecutor(max_workers=self.threadNum)
         self._error = False
         self._headers = headers
-        self._lock = Lock()
         self._bar = tqdm(total=self.size, desc="下载中", unit_scale=True)
+        self._readSize = 1024 * 1024 * 1
+
+    def __getStream__(self, start):
+        stream = RangeRequestIO('GET',
+                                self.url,
+                                headers=self._headers,
+                                max_chunk_size=10 * 1024 * 1024,
+                                callback=None,
+                                encrypt_password=b"")
+        stream.seek(start)
+        return stream
 
     def __createFile__(self):
         try:
@@ -39,22 +48,38 @@ class Downloader(object):
             aigpy.cmd.printErr("创建文件失败：" + str(e))
             return False
 
-    def down(self, start, end, fp):
-        try:
-            req = Request(url=self.url, method='GET')
-            req.headers['Range'] = 'bytes={}-{}'.format(start, end)
-            req.headers.update(self._headers)
-            r = urlopen(req)
+    def __getParts__(self):
+        parts = []
+        partSize = self.size // self.threadNum
+        for i in range(self.threadNum):
+            start = partSize * i
+            if i == self.threadNum - 1:
+                end = self.size
+            else:
+                end = start + partSize
 
-            while not self._error:
-                data = r.read(1024 * 5)
-                tmpSize = len(data)
-                if tmpSize <= 0:
-                    break
-                fp.write(data)
-                self._lock.acquire()
-                self._bar.update(tmpSize)
-                self._lock.release()
+            parts.append([start, end])
+        return parts
+
+    def down(self, start, end):
+        try:
+            r = self.__getStream__(start)
+
+            size = end - start
+            with open(self.filePath, "wb") as fp:
+                fp.seek(start)
+                while not self._error:
+                    part = min(self._readSize, size)
+                    data = r.read(part)
+                    fp.write(data)
+                    self._bar.update(part)
+
+                    size -= part
+                    if self._error:
+                        break
+                    if size <= 0:
+                        break
+            r.close()
         except Exception as e:
             aigpy.cmd.printErr("下载文件块失败：" + str(e))
             self._error = True
@@ -64,22 +89,15 @@ class Downloader(object):
             if not self.__createFile__():
                 return False
 
-            partSize = self.size // self.threadNum
-            pool = ThreadPoolExecutor(max_workers=self.threadNum)
             futures = []
-            for i in range(self.threadNum):
-                start = partSize * i
-                if i == self.threadNum - 1:
-                    end = self.size
-                else:
-                    end = start + partSize - 1
+            parts = self.__getParts__()
+            for item in parts:
+                futures.append(self._pool.submit(self.down, item[0], item[1]))
 
-                fp = open(self.filePath, "wb")
-                fp.seek(start)
-                futures.append(pool.submit(self.down, start, end, fp))
             wait(futures)
             self._bar.close()
             return not self._error
+
         except Exception as e:
             aigpy.cmdHelper.printErr("下载失败：" + str(e))
             self._error = True

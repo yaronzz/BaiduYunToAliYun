@@ -10,7 +10,8 @@
 """
 import aigpy
 from baidupcs_py.baidupcs import BaiduPCSApi
-from tqdm import tqdm
+# from common.io import RangeRequestIO
+from baidupcs_py.common.io import RangeRequestIO
 
 from b2a.downloader import Downloader
 from b2a.platformImp import *
@@ -34,6 +35,23 @@ class BdyKey(object):
             return True
         except:
             return False
+
+    def fileStream(self, url: str):
+        headers = {
+            "Cookie": "; ".join(
+                [f"{k}={v if v is not None else ''}" for k, v in self.api.cookies.items()]
+            ),
+            "User-Agent": "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android",
+            "Connection": "Keep-Alive",
+        }
+        return RangeRequestIO(
+            'GET',
+            url,
+            headers=headers,
+            max_chunk_size=10 * 1024 * 1024,
+            callback=None,
+            encrypt_password=b"",
+        )
 
 
 class BdyPlat(PlatformImp):
@@ -82,16 +100,17 @@ class BdyPlat(PlatformImp):
         name = aigpy.path.getFileName(localFilePath)
         check = aigpy.path.mkdirs(path)
 
-        stream = self.__safeAPI__('file_stream', fileAttr.path)
+        # stream = self.__safeAPI__('file_stream', fileAttr.path)
         # if not stream:
         #     return False
         #
         # curSize = 0
+        # part = 1024 * 1024 * 1
         # totalSize = len(stream)
         # with open(localFilePath, 'wb+') as f:
         #     with tqdm.wrapattr(stream, "read", desc='下载中', miniters=1, total=totalSize, ascii=True) as fs:
         #         while True:
-        #             data = fs.read(5120)
+        #             data = fs.read(part)
         #             f.write(data)
         #             curSize += len(data)
         #             if curSize >= totalSize:
@@ -112,7 +131,7 @@ class BdyPlat(PlatformImp):
         if not link or len(link) <= 0:
             return False
 
-        dl = Downloader(link, headers, localFilePath, fileAttr.size, 1)
+        dl = Downloader(link, headers, localFilePath, fileAttr.size, 6)
         check = dl.run()
         return check
 
