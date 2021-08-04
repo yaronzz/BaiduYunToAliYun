@@ -13,6 +13,7 @@ import os
 import aigpy
 
 from b2a import AliPlat, BdyPlat
+from b2a.common import printInfo, printErr
 from b2a.platformImp import FileAttr
 
 _DOWNLOAD_PATH = './b2a/download/'
@@ -42,17 +43,17 @@ class Trans(object):
         uploadFilePath = self.baseToPath + item.path[len(self.baseFromPath):]
         if self._aliplat.isFileExist(uploadFilePath):
             self.skipCnt += 1
-            aigpy.cmd.printInfo(f"[{self.index}] 跳过文件: {item.path}")
+            printInfo(f"[{self.index}] 跳过文件: {item.path}")
             return True
 
-        aigpy.cmd.printInfo(f"[{self.index}] 迁移文件: {item.path}")
+        printInfo(f"[{self.index}] 迁移文件: {item.path}")
         localFilePath = _DOWNLOAD_PATH + item.path
         if aigpy.file.getSize(localFilePath) <= 0:
             tmpFile = localFilePath + ".tmp"
             check = self._bdyplat.downloadFile(item, tmpFile)
             if not check:
                 aigpy.path.remove(tmpFile)
-                aigpy.cmd.printErr("[错误] 下载失败!")
+                printErr("[错误] 下载失败!")
                 self.errCnt += 1
                 return False
             else:
@@ -60,7 +61,7 @@ class Trans(object):
 
         check = self._aliplat.uploadFile(localFilePath, uploadFilePath)
         if not check:
-            aigpy.cmd.printErr("[错误] 上传失败!")
+            printErr("[错误] 上传失败!")
             self.errCnt += 1
         else:
             self.successCnt += 1
@@ -84,4 +85,4 @@ class Trans(object):
         self.clearCnt()
         self.__movePath__(self.baseFromPath)
         aigpy.path.remove(_DOWNLOAD_PATH)
-        aigpy.cmd.printInfo(f"迁移文件：{self.successCnt}；失败：{self.errCnt}；跳过：{self.skipCnt}")
+        printInfo(f"迁移文件：{self.successCnt}；失败：{self.errCnt}；跳过：{self.skipCnt}")

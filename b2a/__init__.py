@@ -9,6 +9,7 @@
 @Desc    :
 """
 import getopt
+import logging
 import sys
 
 import aigpy
@@ -16,6 +17,7 @@ from prettytable import prettytable
 
 from b2a.aliplat import AliPlat, AliKey
 from b2a.bdyplat import BdyPlat, BdyKey
+from b2a.common import printErr, printInfo
 from b2a.config import B2aConfig
 from b2a.platformImp import PlatformImp
 from b2a.trans import Trans
@@ -32,7 +34,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.8.3.1'
+VERSION = '2021.8.4.1'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()
@@ -43,40 +45,40 @@ trans = Trans(aliplat, bdyplat)
 def loginAli(token: str) -> bool:
     key = AliKey()
     if not key.login(token):
-        aigpy.cmd.printErr("登录阿里云失败!")
+        printErr("登录阿里云失败!")
         return False
     aliplat.setKey(key)
     config.aliKey = key.refreshToken
     if not config.save():
-        aigpy.cmd.printErr("保存登录信息文件失败!")
+        printErr("保存登录信息文件失败!")
     return True
 
 
 def loginBdy(cookies: str) -> bool:
     key = BdyKey()
     if not key.login(cookies):
-        aigpy.cmd.printErr("登录百度云失败!")
+        printErr("登录百度云失败!")
         return False
     bdyplat.setKey(key)
     config.bdyKey = key.cookies
     if not config.save():
-        aigpy.cmd.printErr("保存登录信息文件失败!")
+        printErr("保存登录信息文件失败!")
     return True
 
 
 def listPath(plat: PlatformImp, remotePath: str):
     array = plat.list(remotePath)
-    aigpy.cmd.printInfo(f"目录列表项共有：{len(array)}项")
+    printInfo(f"目录列表项共有：{len(array)}项")
     for item in array:
         print(item.path)
 
 
 def isLogin():
     if not aliplat.hasKey():
-        aigpy.cmd.printErr("请先登录阿里云！")
+        printErr("请先登录阿里云！")
         return False
     if not bdyplat.hasKey():
-        aigpy.cmd.printErr("请先登录百度云！")
+        printErr("请先登录百度云！")
         return False
     return True
 
@@ -113,7 +115,7 @@ def printLogo():
 def printNewVersion():
     version = aigpy.pipHelper.getLastVersion('b2a')
     if aigpy.system.cmpVersion(version, VERSION) > 0:
-        aigpy.cmd.printInfo("发现新版本：" + version)
+        printInfo("发现新版本：" + version)
 
 
 def printUsage():
@@ -143,7 +145,7 @@ def mainCommand():
                                    "hva:b:f:t:",
                                    ["help", "version", "ali=", "bdy=", "from=", "to=", "alist=", "blist="])
     except getopt.GetoptError as errmsg:
-        aigpy.cmd.printErr("输入参数错误!")
+        printErr("输入参数错误!")
         printUsage()
         return
 
@@ -158,11 +160,11 @@ def mainCommand():
             return
         if opt in ('-a', '--ali'):
             if loginAli(val):
-                aigpy.cmd.printInfo("登录阿里云成功!")
+                printInfo("登录阿里云成功!")
             continue
         if opt in ('-b', '--bdy'):
             if loginBdy(val):
-                aigpy.cmd.printInfo("登录百度云成功!")
+                printInfo("登录百度云成功!")
             continue
         if opt in ('-f', '--from'):
             bdyPath = val
@@ -174,13 +176,13 @@ def mainCommand():
             continue
         if opt in ('--alist'):
             if not aliplat.hasKey():
-                aigpy.cmd.printErr('请先登录阿里云！')
+                printErr('请先登录阿里云！')
                 return
             listPath(aliplat, val)
             continue
         if opt in ('--blist'):
             if not bdyplat.hasKey():
-                aigpy.cmd.printErr('请先登录百度云！')
+                printErr('请先登录百度云！')
                 return
             listPath(bdyplat, val)
             continue
@@ -188,7 +190,7 @@ def mainCommand():
     if aliPath == '' or bdyPath == '':
         return
 
-    aigpy.cmd.printInfo(f"====迁移百度云[{bdyPath}]到阿里云[{aliPath}]====")
+    printInfo(f"====迁移百度云[{bdyPath}]到阿里云[{aliPath}]====")
     asyncPath(bdyPath, aliPath)
 
 
@@ -210,9 +212,9 @@ def main():
     printNewVersion()
 
     if config.aliKey and loginAli(config.aliKey):
-        aigpy.cmd.printInfo("登录阿里云成功!")
+        printInfo("登录阿里云成功!")
     if config.bdyKey and loginBdy(config.bdyKey):
-        aigpy.cmd.printInfo("登录百度云成功!")
+        printInfo("登录百度云成功!")
 
     # test()
 
@@ -224,11 +226,11 @@ def main():
         elif choice == '1':
             para = enter("请输入refresh_token:")
             if loginAli(para):
-                aigpy.cmd.printInfo("登录阿里云成功!")
+                printInfo("登录阿里云成功!")
         elif choice == '2':
             para = enter("请输入cookies:")
             if loginBdy(para):
-                aigpy.cmd.printInfo("登录百度云成功!")
+                printInfo("登录百度云成功!")
         elif choice == '3':
             para = enter("请输入路径:")
             listPath(aliplat, para)

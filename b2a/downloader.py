@@ -14,6 +14,8 @@ import aigpy.cmdHelper
 from baidupcs_py.common.io import RangeRequestIO
 from tqdm import tqdm
 
+from b2a.common import printErr
+
 
 class Downloader(object):
     def __init__(self, url, headers, filePath, size, threadNum=6):
@@ -45,7 +47,7 @@ class Downloader(object):
             fp.close()
             return True
         except Exception as e:
-            aigpy.cmd.printErr("创建文件失败：" + str(e))
+            printErr("创建文件失败：" + str(e))
             return False
 
     def __getParts__(self):
@@ -81,7 +83,7 @@ class Downloader(object):
                         break
             r.close()
         except Exception as e:
-            aigpy.cmd.printErr("下载文件块失败：" + str(e))
+            printErr("下载文件块失败：" + str(e))
             self._error = True
 
     def run(self):

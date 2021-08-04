@@ -13,6 +13,7 @@ from baidupcs_py.baidupcs import BaiduPCSApi
 # from common.io import RangeRequestIO
 from baidupcs_py.common.io import RangeRequestIO
 
+from b2a.common import printErr
 from b2a.downloader import Downloader
 from b2a.platformImp import *
 
@@ -71,7 +72,7 @@ class BdyPlat(PlatformImp):
                 elif method == 'file_stream':
                     return self.key.api.file_stream(para)
             except:
-                aigpy.cmd.printErr("重新尝试获取：BdyPlat " + method)
+                printErr("重新尝试获取：BdyPlat " + method)
                 retry -= 1
         return None
 

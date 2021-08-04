@@ -13,15 +13,16 @@ import os
 
 import aigpy
 
-_BASE_PATH = os.path.expanduser('~') + '/b2a/'
-_CONFIG_FILE_PATH = f"{_BASE_PATH}auth.json"
+from b2a.common import getBasePath
+
+_CONFIG_FILE_PATH = f"{getBasePath()}auth.json"
 _ALI_KEY = "ali-refresh_token"
 _BDY_KEY = "bdy-cookies"
 
 
 class B2aConfig(object):
     def __init__(self):
-        aigpy.path.mkdirs(_BASE_PATH)
+        aigpy.path.mkdirs(getBasePath())
         self.aliKey = ""
         self.bdyKey = ""
         self.load()
