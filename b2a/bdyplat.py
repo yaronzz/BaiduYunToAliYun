@@ -60,7 +60,7 @@ class BdyPlat(PlatformImp):
         super().__init__()
 
     def __safeAPI__(self, method, para):
-        retry = 3
+        retry = 10
         while retry > 0:
             try:
                 if method == 'list':

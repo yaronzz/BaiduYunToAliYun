@@ -16,6 +16,7 @@ import aigpy.cmdHelper
 _BASE_PATH = os.path.expanduser('~') + '/b2a/'
 _LOG_FILE_PATH = f"{_BASE_PATH}b2a.log"
 
+aigpy.cmd.mkdirs(_BASE_PATH)
 logging.basicConfig(filename=_LOG_FILE_PATH,
                     level=logging.INFO,
                     format='%(asctime)s - %(levelname)s: %(message)s')

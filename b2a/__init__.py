@@ -13,7 +13,7 @@ import logging
 import sys
 
 import aigpy
-from prettytable import prettytable
+import prettytable
 
 from b2a.aliplat import AliPlat, AliKey
 from b2a.bdyplat import BdyPlat, BdyKey
@@ -34,7 +34,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.8.4.1'
+VERSION = '2021.8.9.3'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()

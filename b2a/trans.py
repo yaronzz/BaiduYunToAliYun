@@ -57,6 +57,7 @@ class Trans(object):
                 self.errCnt += 1
                 return False
             else:
+                printInfo("下载成功！")
                 os.rename(tmpFile, localFilePath)
 
         check = self._aliplat.uploadFile(localFilePath, uploadFilePath)

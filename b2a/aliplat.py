@@ -16,6 +16,7 @@ from xml.dom.minidom import parseString
 import aigpy
 import requests
 from aigpy.progressHelper import ProgressTool
+from tqdm import tqdm
 
 from b2a.common import printErr
 from b2a.platformImp import *
@@ -237,7 +238,7 @@ class AliKey(object):
     #     except:
     #         return ''
 
-    def uploadFile(self, link: AliUploadLink, showProgress: bool = True) -> bool:
+    def uploadFile(self, link: AliUploadLink) -> bool:
         if not link:
             return False
         if not link.needUpload:
@@ -245,7 +246,7 @@ class AliKey(object):
 
         try:
             totalSize = os.path.getsize(link.localFilePath)
-            progress = ProgressTool(totalSize, 15) if showProgress else None
+            progress = tqdm(total=totalSize, desc="上传中", unit_scale=True)
             index = 0
             curcount = 0
             with open(link.localFilePath, 'rb') as f:
@@ -272,11 +273,10 @@ class AliKey(object):
                             return False
                     index += 1
                     curcount += len(chunk)
-                    if progress:
-                        progress.setCurCount(curcount)
+                    progress.update(len(chunk))
                     if curcount >= totalSize:
                         break
-
+            progress.close()
             complete_data = {"drive_id": self.driveId,
                              "file_id": link.fileId,
                              "upload_id": link.uploadId
