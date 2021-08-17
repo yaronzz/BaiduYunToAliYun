@@ -34,7 +34,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.8.9.3'
+VERSION = '2021.8.17.0'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()

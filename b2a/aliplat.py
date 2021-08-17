@@ -28,6 +28,7 @@ class AliUploadLink(object):
     def __init__(self, jsonData, localFilePath, remoteFilePath):
         self.list = jsonData.get('part_info_list', [])
         self.fileId = jsonData.get('file_id')
+        self.fileSize = aigpy.fileHelper.getSize(localFilePath)
         self.uploadId = jsonData.get('upload_id')
         self.needUpload = True
         self.localFilePath = localFilePath
@@ -42,7 +43,7 @@ class AliUploadLink(object):
 class AliKey(object):
     def __init__(self):
         super().__init__()
-        self.chunkSize = 10485760
+        self.chunkSize = 1024 * 1024 * 10
         self.driveId = ''
         self.refreshToken = ''
         self.headers = None
@@ -244,6 +245,14 @@ class AliKey(object):
         if not link.needUpload:
             return True
 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36 Edg/92.0.902.73",
+            "Connection": "Keep-Alive",
+            "Referer": "https://www.aliyundrive.com/",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept": "*/*",
+        }
+
         try:
             totalSize = os.path.getsize(link.localFilePath)
             progress = tqdm(total=totalSize, desc="上传中", unit_scale=True)
@@ -255,6 +264,7 @@ class AliKey(object):
 
                     res = requests.put(url=link.list[index]['upload_url'],
                                        data=chunk,
+                                       headers=headers,
                                        verify=False,
                                        timeout=None)
 
@@ -274,6 +284,7 @@ class AliKey(object):
                     index += 1
                     curcount += len(chunk)
                     progress.update(len(chunk))
+                    res.raise_for_status()
                     if curcount >= totalSize:
                         break
             progress.close()
