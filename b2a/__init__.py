@@ -34,7 +34,7 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.8.17.0'
+VERSION = '2021.8.31.1'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()
@@ -152,6 +152,7 @@ def mainCommand():
     bdyPath = ''
     aliPath = ''
     for opt, val in opts:
+        printInfo(f"opt={opt},val={val}")
         if opt in ('-h', '--help'):
             printUsage()
             return

@@ -217,27 +217,49 @@ class AliKey(object):
                     return node.data
         return False
 
-    # def __getUploadUrl__(self, fileId, filesize, uploadId):
-    #     try:
-    #         part_info_list = []
-    #         for i in range(0, math.ceil(filesize / self.chunk_size)):
-    #             part_info_list.append({'part_number': i + 1})
+    def __uploadParts__(self, data, url, headers):
+        retTry = 3
+        msg = ''
+        while retTry > 0:
+            retTry -= 1
+            try:
+                res = requests.put(url=url,
+                                   data=data,
+                                   headers=headers,
+                                   verify=False,
+                                   timeout=None)
+                if 400 <= res.status_code < 600:
+                    # message = self.__getXmlValue__(res.text, 'Message')
+                    # if message == 'Request has expired.':
+                    #     part_upload_url_list = self.__getUploadUrl__(file_id, filesize, upload_id)
+                    #     if part_upload_url_list == '':
+                    #         return False
+                    #     continue
+                    code = self.__getXmlValue__(res.text, 'Code')
+                    if code == 'PartAlreadyExist':
+                        pass
+                    else:
+                        res.raise_for_status()
+                        return False
+                return True
+            except Exception as e:
+                msg = str(e)
 
-    #         requests_data = {
-    #             "drive_id": self.driveId,
-    #             "file_id": fileId,
-    #             "part_info_list": part_info_list,
-    #             "upload_id": uploadId,
-    #         }
-    #         requests_post = requests.post('https://api.aliyundrive.com/v2/file/get_upload_url',
-    #                                       data=json.dumps(requests_data),
-    #                                       headers=self.headers,
-    #                                       verify=False
-    #                                       )
-    #         requests_post_json = requests_post.json()
-    #         return requests_post_json.get('part_info_list')
-    #     except:
-    #         return ''
+        printErr('上传文件块失败：' + msg)
+        return False
+
+    def __uploadComplete__(self, fileId, uploadId):
+        complete_data = {"drive_id": self.driveId,
+                         "file_id": fileId,
+                         "upload_id": uploadId
+                         }
+        requests_post_json = requests.post('https://api.aliyundrive.com/v2/file/complete',
+                                           json.dumps(complete_data),
+                                           headers=self.headers,
+                                           verify=False).json()
+        if 'file_id' in requests_post_json:
+            return True
+        return False
 
     def uploadFile(self, link: AliUploadLink) -> bool:
         if not link:
@@ -253,54 +275,34 @@ class AliKey(object):
             "Accept": "*/*",
         }
 
-        try:
-            totalSize = os.path.getsize(link.localFilePath)
-            progress = tqdm(total=totalSize, desc="上传中", unit_scale=True)
-            index = 0
-            curcount = 0
-            with open(link.localFilePath, 'rb') as f:
-                while True:
-                    chunk = f.read(self.chunkSize)
+        totalSize = os.path.getsize(link.localFilePath)
+        progress = tqdm(total=totalSize, desc="上传中", unit_scale=True)
 
-                    res = requests.put(url=link.list[index]['upload_url'],
-                                       data=chunk,
-                                       headers=headers,
-                                       verify=False,
-                                       timeout=None)
+        index = 0
+        curcount = 0
+        check = False
 
-                    if 400 <= res.status_code < 600:
-                        # message = self.__getXmlValue__(res.text, 'Message')
-                        # if message == 'Request has expired.':
-                        #     part_upload_url_list = self.__getUploadUrl__(file_id, filesize, upload_id)
-                        #     if part_upload_url_list == '':
-                        #         return False
-                        #     continue
-                        code = self.__getXmlValue__(res.text, 'Code')
-                        if code == 'PartAlreadyExist':
-                            pass
-                        else:
-                            res.raise_for_status()
-                            return False
-                    index += 1
-                    curcount += len(chunk)
-                    progress.update(len(chunk))
-                    res.raise_for_status()
-                    if curcount >= totalSize:
-                        break
-            progress.close()
-            complete_data = {"drive_id": self.driveId,
-                             "file_id": link.fileId,
-                             "upload_id": link.uploadId
-                             }
-            requests_post_json = requests.post('https://api.aliyundrive.com/v2/file/complete',
-                                               json.dumps(complete_data),
-                                               headers=self.headers,
-                                               verify=False).json()
-            if 'file_id' in requests_post_json:
-                return True
-        except Exception as e:
-            printErr("上传文件失败：" + str(e))
+        with open(link.localFilePath, 'rb') as f:
+            while True:
+                chunk = f.read(self.chunkSize)
+                check = self.__uploadParts__(chunk, link.list[index]['upload_url'], headers)
+                if not check:
+                    break
+                progress.update(len(chunk))
+                curcount += len(chunk)
+                index += 1
+                if curcount >= totalSize:
+                    break
+                if index >= len(link.list):
+                    printErr(f"上传文件失败：list index{index} out of range{len(link.list)}")
+                    check = False
+                    break
+        progress.close()
+
+        if not check:
             return False
+
+        return self.__uploadComplete__(link.fileId, link.uploadId)
 
 
 class CheckFileExistCache(object):

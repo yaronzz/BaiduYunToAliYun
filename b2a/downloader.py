@@ -8,6 +8,7 @@
 @Contact :  yaronhuang@foxmail.com
 @Desc    :
 """
+import threading
 from concurrent.futures import ThreadPoolExecutor, wait
 
 import aigpy.cmdHelper
@@ -29,6 +30,7 @@ class Downloader(object):
         self._headers = headers
         self._bar = tqdm(total=self.size, desc="下载中", unit_scale=True)
         self._readSize = 1024 * 1024 * 1
+        self._lock = threading.Lock()
 
     def __getStream__(self, start):
         stream = RangeRequestIO('GET',
@@ -36,7 +38,8 @@ class Downloader(object):
                                 headers=self._headers,
                                 max_chunk_size=10 * 1024 * 1024,
                                 callback=None,
-                                encrypt_password=b"")
+                                encrypt_password=b"",
+                                timeout=(5, 60))
         stream.seek(start)
         return stream
 
@@ -63,28 +66,57 @@ class Downloader(object):
             parts.append([start, end])
         return parts
 
+    def __readStream__(self, stream, part, offset):
+        retry = 3
+        while True:
+            try:
+                data = stream.read(part)
+                return data
+            except Exception as e:
+                stream.seek(offset)
+                retry -= 1
+                if retry > 0:
+                    continue
+                raise e
+        return None
+
+    def __getFileStream__(self, offset):
+        fp = open(self.filePath, 'wb')
+        fp.seek(offset)
+        return fp
+
     def down(self, start, end):
         try:
             r = self.__getStream__(start)
-
-            size = end - start
-            with open(self.filePath, "wb") as fp:
-                fp.seek(start)
-                while not self._error:
-                    part = min(self._readSize, size)
-                    data = r.read(part)
-                    fp.write(data)
-                    self._bar.update(part)
-
-                    size -= part
-                    if self._error:
-                        break
-                    if size <= 0:
-                        break
-            r.close()
+            fp = self.__getFileStream__(start)
         except Exception as e:
             printErr("下载文件块失败：" + str(e))
             self._error = True
+            return
+
+        try:
+            size = end - start
+            offset = start
+            while not self._error:
+                part = min(self._readSize, size)
+                data = self.__readStream__(r, part, offset)
+
+                self._lock.acquire()
+                fp.write(data)
+                self._bar.update(part)
+                self._lock.release()
+
+                size -= part
+                offset += part
+                if self._error:
+                    break
+                if size <= 0:
+                    break
+        except Exception as e:
+            printErr("下载文件块失败：" + str(e))
+            self._error = True
+        r.close()
+        fp.close()
 
     def run(self):
         try:
