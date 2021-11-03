@@ -11,6 +11,7 @@
 import json
 import math
 import os
+import time
 from xml.dom.minidom import parseString
 
 import aigpy
@@ -49,13 +50,26 @@ class AliKey(object):
         self.headers = None
         self.pathIds = {'/': 'root'}
 
+    def token_refresh(self, refresh_token: str = None):
+        # url = 'https://websv.aliyundrive.com/token/refresh'
+        # json = {"refresh_token": self.refresh_token}
+        url = 'https://auth.aliyundrive.com/v2/account/token'
+        json = {"refresh_token": refresh_token, 'grant_type': 'refresh_token'}
+        # r = requests.post(url, json=json, access_token=False)
+        r = requests.post(url,
+                          json=json,
+                          headers={'content-type': 'application/json;charset=UTF-8'},
+                          verify=False)
+        try:
+            self._refresh_token = r.json()['refresh_token']
+            self._refresh_token_expires = time.time() + r.json()['expires_in']
+        except KeyError:
+            raise InvalidRefreshToken
+        return r.json()
+
     def login(self, refreshToken: str) -> bool:
         try:
-            data = {"refresh_token": refreshToken}
-            post_json = requests.post('https://websv.aliyundrive.com/token/refresh',
-                                      data=json.dumps(data),
-                                      headers={'content-type': 'application/json;charset=UTF-8'},
-                                      verify=False).json()
+            post_json = self.token_refresh(refreshToken)
             self.headers = {
                 'authorization': post_json['access_token'],
                 'content-type': 'application/json;charset=UTF-8'
