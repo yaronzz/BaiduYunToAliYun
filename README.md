@@ -2,9 +2,14 @@
 同步百度云网盘到阿里云
 
 ## 📺 安装 
+- pip 安装
 需要 Python 版本大于或等于 3.7
 ```shell
 pip3 install b2a --upgrade
+```
+- docker 安装
+```
+docker run -itd --name b2a --restart always calmyin/b2a:v2021.12.31.1
 ```
 
 ## 🤖 功能
