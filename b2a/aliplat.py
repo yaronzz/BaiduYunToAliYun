@@ -53,7 +53,7 @@ class AliKey(object):
     def token_refresh(self, refresh_token: str = None):
         # url = 'https://websv.aliyundrive.com/token/refresh'
         # json = {"refresh_token": self.refresh_token}
-        url = 'https://auth.aliyundrive.com/v2/account/token'
+        url = 'https://api.aliyundrive.com/token/refresh'
         json = {"refresh_token": refresh_token, 'grant_type': 'refresh_token'}
         # r = requests.post(url, json=json, access_token=False)
         r = requests.post(url,
