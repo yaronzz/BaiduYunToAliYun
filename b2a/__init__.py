@@ -34,12 +34,12 @@ __LOGO__ = '''
 
   https://github.com/yaronzz/BaiduYunToAliYun 
 '''
-VERSION = '2021.8.31.1'
+VERSION = '2022.07.07.1'
 
 aliplat = AliPlat()
 bdyplat = BdyPlat()
 config = B2aConfig()
-trans = Trans(aliplat, bdyplat)
+trans = Trans(aliplat, bdyplat, config.path)
 
 
 def loginAli(token: str) -> bool:
@@ -83,12 +83,12 @@ def isLogin():
     return True
 
 
-def asyncPath(bdyFromPath: str, aliToPath: str):
+def asyncPath(bdyFromPath: str, aliToPath: str, saveLocal: bool = False):
     if not isLogin():
         return
     trans.clearCnt()
     trans.setPath(bdyFromPath, aliToPath)
-    trans.start()
+    trans.start(saveLocal)
 
 
 def printChoices():
@@ -103,6 +103,7 @@ def printChoices():
     tb.add_row([aigpy.cmd.green("输入" + " '3':"), "显示阿里云目录"])
     tb.add_row([aigpy.cmd.green("输入" + " '4':"), "显示百度云目录"])
     tb.add_row([aigpy.cmd.green("输入" + " '5':"), "文件迁移"])
+    tb.add_row([aigpy.cmd.green("输入" + " '6':"), "设置下载目录"])
     print(tb)
     print("====================================================")
 
@@ -114,7 +115,7 @@ def printLogo():
 
 def printNewVersion():
     version = aigpy.pipHelper.getLastVersion('b2a')
-    if aigpy.system.cmpVersion(version, VERSION) > 0:
+    if version is not None and aigpy.system.cmpVersion(version, VERSION) > 0:
         printInfo("发现新版本：" + version)
 
 
@@ -129,6 +130,8 @@ def printUsage():
     tb.add_row(["-b or --bdy", "登录百度云，参数为cookies"])
     tb.add_row(["-f or --from", "待迁移的百度云目录"])
     tb.add_row(["-t or --to", "要存放的阿里云目录"])
+    tb.add_row(["-p or --path", "文件下载目录"])
+    tb.add_row(["-s or --save", "保存下载的文件"])
     tb.add_row(["--alist", "显示阿里云目录"])
     tb.add_row(["--blist", "显示百度云目录"])
     print(tb)
@@ -139,11 +142,11 @@ def mainCommand():
         loginAli(config.aliKey)
     if config.bdyKey:
         loginBdy(config.bdyKey)
-
+        
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   "hva:b:f:t:",
-                                   ["help", "version", "ali=", "bdy=", "from=", "to=", "alist=", "blist="])
+                                   "hva:b:f:t:p:s",
+                                   ["help", "version", "save", "ali=", "bdy=", "from=", "to=", "alist=", "blist=","path="])
     except getopt.GetoptError as errmsg:
         printErr("输入参数错误!")
         printUsage()
@@ -151,6 +154,7 @@ def mainCommand():
 
     bdyPath = ''
     aliPath = ''
+    saveLocal = False
     for opt, val in opts:
         printInfo(f"opt={opt},val={val}")
         if opt in ('-h', '--help'):
@@ -159,6 +163,9 @@ def mainCommand():
         if opt in ('-v', '--version'):
             printLogo()
             return
+        if opt in ('-s', '--save'):
+            saveLocal = True
+            continue
         if opt in ('-a', '--ali'):
             if loginAli(val):
                 printInfo("登录阿里云成功!")
@@ -187,12 +194,16 @@ def mainCommand():
                 return
             listPath(bdyplat, val)
             continue
+        if opt in ('-p', '--path'):
+            if trans.setDownloadPath(val) is False:
+                return
+            continue
 
     if aliPath == '' or bdyPath == '':
         return
 
     printInfo(f"====迁移百度云[{bdyPath}]到阿里云[{aliPath}]====")
-    asyncPath(bdyPath, aliPath)
+    asyncPath(bdyPath, aliPath, saveLocal)
 
 
 def enter(desc):
@@ -217,6 +228,7 @@ def main():
     if config.bdyKey and loginBdy(config.bdyKey):
         printInfo("登录百度云成功!")
 
+    printInfo("下载目录 " + trans.downloadPath)
     # test()
 
     while True:
@@ -241,7 +253,14 @@ def main():
         elif choice == '5':
             fromPath = enter("请输入百度云路径:")
             toPath = enter("请输入阿里云路径:")
-            asyncPath(fromPath, toPath)
+            saveLocal = aigpy.cmd.isInputYes(enter("保存下载文件(输入y或n,默认否):"))
+            asyncPath(fromPath, toPath, saveLocal)
+        elif choice == '6':
+            para = enter("请输入下载目录:")
+            if trans.setDownloadPath(para):
+                config.path = trans.downloadPath
+                config.save()
+            printInfo("下载目录 " + trans.downloadPath)
 
 
 if __name__ == "__main__":
