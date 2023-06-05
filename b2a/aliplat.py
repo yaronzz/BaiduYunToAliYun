@@ -112,7 +112,7 @@ class AliKey(object):
 
         try:
             requests_data = {"drive_id": self.driveId, "parent_file_id": sid, 'marker': nextMarker, 'limit': 100}
-            requests_post = requests.post('https://api.aliyundrive.com/v2/file/list',
+            requests_post = requests.post('https://api.aliyundrive.com/adrive/v3/file/list',
                                           data=json.dumps(requests_data),
                                           headers=self.headers,
                                           verify=False).json()
