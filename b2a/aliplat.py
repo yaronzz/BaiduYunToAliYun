@@ -110,33 +110,43 @@ class AliKey(object):
         if not sid:
             return []
 
-        try:
-            requests_data = {"drive_id": self.driveId, "parent_file_id": sid, 'marker': nextMarker, 'limit': 100}
-            requests_post = requests.post('https://api.aliyundrive.com/adrive/v3/file/list',
-                                          data=json.dumps(requests_data),
-                                          headers=self.headers,
-                                          verify=False).json()
-            ret = []
-            for item in requests_post['items']:
-                obj = FileAttr()
-                obj.isfile = item['type'] != 'folder'
-                obj.name = item['name']
-                obj.path = remotePath + '/' + item['name']
-                obj.uid = item['file_id']
-                obj.size = item['size'] if 'size' in item else 0
-                if not obj.isfile:
-                    self.__updatePathId__(obj.path, obj.uid)
+        retry = 3
+        while True:
+            try:
+                retry -= 1
+                requests_data = {"drive_id": self.driveId, "parent_file_id": sid, 'marker': nextMarker, 'limit': 100}
+                requests_post = requests.post('https://api.aliyundrive.com/adrive/v3/file/list',
+                                            data=json.dumps(requests_data),
+                                            headers=self.headers,
+                                            verify=False).json()
+                if 'items' not in requests_post:
+                    if retry > 0:
+                        time.sleep(1)
+                        continue
+                    printErr("获取目录文件列表失败：" + requests_post['code'])
+                    return []
+                
+                ret = []
+                for item in requests_post['items']:
+                    obj = FileAttr()
+                    obj.isfile = item['type'] != 'folder'
+                    obj.name = item['name']
+                    obj.path = remotePath + '/' + item['name']
+                    obj.uid = item['file_id']
+                    obj.size = item['size'] if 'size' in item else 0
+                    if not obj.isfile:
+                        self.__updatePathId__(obj.path, obj.uid)
 
-                ret.append(obj)
+                    ret.append(obj)
 
-            next_marker = requests_post.get('next_marker')
-            if next_marker and nextMarker != requests_post['next_marker']:
-                ret.extend(self.list(remotePath, next_marker))
+                next_marker = requests_post.get('next_marker')
+                if next_marker and nextMarker != requests_post['next_marker']:
+                    ret.extend(self.list(remotePath, next_marker))
 
-            return ret
-        except Exception as e:
-            printErr("获取目录文件列表失败：" + str(e))
-            return []
+                return ret
+            except Exception as e:
+                printErr("获取目录文件列表失败：" + str(e))
+                return []
 
     def __mkdir__(self, folderName, parentFolderId='root') -> (bool, str):
         folderName = folderName.strip('/')
