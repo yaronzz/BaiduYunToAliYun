@@ -8,6 +8,8 @@
 @Contact :  yaronhuang@foxmail.com
 @Desc    :
 """
+import os
+import subprocess
 import aigpy
 from baidupcs_py.baidupcs import BaiduPCSApi
 # from common.io import RangeRequestIO
@@ -120,21 +122,25 @@ class BdyPlat(PlatformImp):
         # stream.close()
         # return True
 
-        headers = {
-            "Cookie ": "; ".join(
-                [f"{k}={v if v is not None else ''}" for k, v in self.key.api.cookies.items()]
-            ),
-            "User-Agent": "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android",
-            "Connection": "Keep-Alive",
-        }
+        # headers = {
+        #     "Cookie ": "; ".join(
+        #         [f"{k}={v if v is not None else ''}" for k, v in self.key.api.cookies.items()]
+        #     ),
+        #     "User-Agent": "netdisk;2.2.51.6;netdisk;10.0.63;PC;android-android",
+        #     "Connection": "Keep-Alive",
+        # }
 
-        link = self.__safeAPI__('download_link', fileAttr.path)
-        if not link or len(link) <= 0:
-            return False
-
-        dl = Downloader(link, headers, localFilePath, fileAttr.size, 6)
-        check = dl.run()
-        return check
+        # link = self.__safeAPI__('download_link', fileAttr.path)
+        # if not link or len(link) <= 0:
+        #     return False
+        
+        # dl = Downloader(link, headers, localFilePath, fileAttr.size, 1)
+        # check = dl.run()
+        # return check
+        
+        cmd = f'BaiduPCS-Py download -o \"{path}\" \"{fileAttr.path}\"'
+        child = subprocess.run(cmd)
+        return child.returncode == 0
 
     def uploadFile(self, localFilePath: str, remoteFilePath: str) -> bool:
         return False

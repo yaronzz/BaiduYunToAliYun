@@ -16,3 +16,4 @@ fastapi~=0.63.0
 Jinja2~=2.11.3
 b2a~=2021.7.23.2
 PyQt5~=5.15.1
+BaiduPCS-Py~=0.6.32

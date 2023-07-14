@@ -56,7 +56,7 @@ class Trans(object):
         localFilePath = self.downloadPath + item.path
         localSize = aigpy.file.getSize(localFilePath)
         if localSize <= 0:
-            tmpFile = localFilePath + ".tmp"
+            tmpFile = localFilePath# + ".tmp"
             check = self._bdyplat.downloadFile(item, tmpFile)
             if not check:
                 aigpy.path.remove(tmpFile)
@@ -65,7 +65,7 @@ class Trans(object):
                 return False
             else:
                 printInfo("下载成功！")
-                os.rename(tmpFile, localFilePath)
+                # os.rename(tmpFile, localFilePath)
 
         check = self._aliplat.uploadFile(localFilePath, uploadFilePath)
         if not check:
