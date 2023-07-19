@@ -39,6 +39,7 @@ docker run -itd --name b2a --restart always calmyin/b2a:v2021.12.31.1
 | ------------------ | -------------------------- |
 | 打开交互操作       | b2a                        |
 | 显示命令行说明     | b2a -h                     |
+| 显示GUI         | b2a -g                     |
 | 显示版本号         | b2a -v                     |
 | 设置下载目录      | b2a -p "e:/download"        |
 | 登录阿里云         | b2a -a "你的refresh_token" |
