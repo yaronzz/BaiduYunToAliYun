@@ -350,6 +350,7 @@ class CheckFileExistCache(object):
 class AliPlat(PlatformImp):
     def __init__(self):
         super().__init__()
+        self.name = '阿里'
         self.checkFileExistCache = CheckFileExistCache()
 
     def list(self, remotePath: str, includeSubDir: bool = False) -> List[FileAttr]:

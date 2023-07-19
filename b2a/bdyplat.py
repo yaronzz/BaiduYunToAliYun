@@ -60,6 +60,7 @@ class BdyKey(object):
 class BdyPlat(PlatformImp):
     def __init__(self):
         super().__init__()
+        self.name = '百度'
 
     def __safeAPI__(self, method, para):
         retry = 10
@@ -84,6 +85,8 @@ class BdyPlat(PlatformImp):
             remotePath = '/'
 
         res = self.__safeAPI__('list', remotePath)
+        if not res:
+            return []
         for item in res:
             obj = FileAttr()
             obj.isfile = item.is_file

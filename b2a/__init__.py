@@ -21,6 +21,7 @@ from b2a.common import printErr, printInfo
 from b2a.config import B2aConfig
 from b2a.platformImp import PlatformImp
 from b2a.trans import Trans
+from b2a.gui import startGui
 
 __LOGO__ = '''
          /$$$$$$$   /$$$$$$   /$$$$$$         
@@ -125,6 +126,7 @@ def printUsage():
     tb.field_names = ["功能", "描述"]
     tb.align = 'l'
     tb.add_row(["-h or --help", "显示帮助"])
+    tb.add_row(["-g or --gui", "显示GUI"])
     tb.add_row(["-v or --version", "显示版本"])
     tb.add_row(["-a or --ali", "登录阿里云，参数为refresh_token"])
     tb.add_row(["-b or --bdy", "登录百度云，参数为cookies"])
@@ -145,8 +147,8 @@ def mainCommand():
         
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   "hva:b:f:t:p:s",
-                                   ["help", "version", "save", "ali=", "bdy=", "from=", "to=", "alist=", "blist=","path="])
+                                   "hva:b:f:t:p:sg",
+                                   ["help", "version", "save", "ali=", "bdy=", "from=", "to=", "alist=", "blist=","path=","gui"])
     except getopt.GetoptError as errmsg:
         printErr("输入参数错误!")
         printUsage()
@@ -156,7 +158,7 @@ def mainCommand():
     aliPath = ''
     saveLocal = False
     for opt, val in opts:
-        printInfo(f"opt={opt},val={val}")
+        # printInfo(f"opt={opt},val={val}")
         if opt in ('-h', '--help'):
             printUsage()
             return
@@ -198,6 +200,9 @@ def mainCommand():
             if trans.setDownloadPath(val) is False:
                 return
             continue
+        if opt in ('-g', '--gui'):
+            startGui()
+            return
 
     if aliPath == '' or bdyPath == '':
         return

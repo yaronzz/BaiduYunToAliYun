@@ -24,6 +24,7 @@ class FileAttr(object):
 class PlatformImp(metaclass=abc.ABCMeta):
     def __init__(self):
         self.key = None
+        self.name = ''
 
     def hasKey(self) -> bool:
         return self.key is not None
