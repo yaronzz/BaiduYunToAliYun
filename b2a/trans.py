@@ -47,6 +47,7 @@ class Trans(object):
         self.index += 1
 
         uploadFilePath = self.baseToPath + item.path[len(self.baseFromPath):]
+        uploadFilePath = uploadFilePath.replace("//", "/")
         if self._aliplat.isFileExist(uploadFilePath):
             self.skipCnt += 1
             printInfo(f"[{self.index}] 跳过文件: {item.path}")

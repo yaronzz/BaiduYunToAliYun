@@ -141,7 +141,8 @@ class BdyPlat(PlatformImp):
         # check = dl.run()
         # return check
         
-        cmd = f'BaiduPCS-Py download -o \"{path}\" \"{fileAttr.path}\"'
+        # cmd = f'BaiduPCS-Py download -o \"{path}\" \"{fileAttr.path}\"'
+        cmd = ['BaiduPCS-Py', 'download', '-o', f'{path}', f'{fileAttr.path}']
         child = subprocess.run(cmd)
         return child.returncode == 0
 
